@@ -33,6 +33,10 @@ class CarMapContainer(
     var surfaceWidth: Int? = null
     var surfaceHeight: Int? = null
 
+    fun scrollBy(x: Float, y: Float) {
+        mapboxMapInstance?.scrollBy(-x, -y, 0  )
+    }
+    
     /**
      * This function is called when the surface is created, to update the mapview with the surface sizes
      */

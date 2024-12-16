@@ -7,7 +7,6 @@ import android.graphics.Rect
 import android.graphics.Typeface
 import android.os.Handler
 import android.os.Looper
-import android.os.SystemClock
 import android.util.Log
 import android.view.MotionEvent
 import android.view.TextureView
@@ -23,7 +22,6 @@ import kotlinx.coroutines.delay
 import nl.flitsmeister.car_common.extentions.appManager
 import nl.flitsmeister.car_common.extentions.runOnMainThread
 import kotlin.math.max
-import org.maplibre.android.maps.MapView
 
 class CarMapRenderer(
     private val carContext: CarContext,
@@ -81,20 +79,16 @@ class CarMapRenderer(
         Log.v(LOG_TAG, "CarMapRenderer.onSurfaceAvailable")
         this.surfaceContainer = surfaceContainer
         mapContainer.setSurfaceSize(surfaceContainer.width, surfaceContainer.height)
-
+        mapContainer.mapViewInstance?.apply {
+            addOnDidBecomeIdleListener { drawOnSurface() }
+            addOnWillStartRenderingFrameListener {
+                drawOnSurface()
+            }
+        }
         runOnMainThread {
             // Start drawing the map on the android auto surface
-            uiHandler.removeCallbacksAndMessages(null)
-            uiHandler.post { drawOnSurfaceRecursive() }
+            drawOnSurface()
         }
-    }
-
-    private fun drawOnSurfaceRecursive() {
-        val drawingStart = SystemClock.elapsedRealtime()
-        drawOnSurface()
-        val drawingDelay =
-            max(DRAWING_INTERVAL - (SystemClock.elapsedRealtime() - drawingStart), 0L)
-        uiHandler.postDelayed(::drawOnSurfaceRecursive, drawingDelay)
     }
 
     private fun drawOnSurface() {
@@ -193,36 +187,7 @@ class CarMapRenderer(
     @Synchronized
     override fun onScroll(distanceX: Float, distanceY: Float) {
         Log.v(LOG_TAG, "onScroll distanceX($distanceX) distanceY($distanceY)")
-        val mapInstance = mapContainer.mapViewInstance ?: return
-
-        if (currentTouchPoint == null) {
-            val touchX = mapInstance.measuredWidth / 2f
-            val touchY = mapInstance.measuredHeight / 2f
-            currentTouchPoint = PointF(touchX, touchY).also {
-                mapInstance.onTouchEvent(createMotionEvent(MotionEvent.ACTION_DOWN, it.x, it.y))
-            }
-        } else {
-            currentTouchPoint?.let {
-                currentTouchPoint = PointF(it.x - distanceX, it.y - distanceY).also {
-                    mapInstance.onTouchEvent(createMotionEvent(MotionEvent.ACTION_MOVE, it.x, it.y))
-                }
-            }
-        }
-
-        resetTouchPointJob?.cancel()
-        resetTouchPointJob = runOnMainThread {
-            delay(200)
-            currentTouchPoint?.let {
-                mapContainer.mapViewInstance?.onTouchEvent(
-                    createMotionEvent(
-                        MotionEvent.ACTION_UP,
-                        it.x,
-                        it.y
-                    )
-                )
-            }
-            currentTouchPoint = null
-        }
+        mapContainer.scrollBy(distanceX, distanceY)
 
     }
 
@@ -236,15 +201,6 @@ class CarMapRenderer(
         super.onFling(velocityX, velocityY)
         // We don't need to implement onFling since the MapView does this for us
     }
-
-    private fun createMotionEvent(event: Int, x: Float, y: Float) = MotionEvent.obtain(
-        SystemClock.uptimeMillis(),
-        SystemClock.uptimeMillis(),
-        event,
-        x,
-        y,
-        0
-    )
 
     fun generateZoomGesture(
         startTime: Long, ifMove: Boolean, startPoint1: PointF,
@@ -372,8 +328,6 @@ class CarMapRenderer(
     }
 
     companion object {
-        private var FPS_LIMIT = 30 //TODO: Maybe not hardcode this
-        private var DRAWING_INTERVAL = (1000 / FPS_LIMIT).toLong()
         const val LOG_TAG = "CarMapRenderer"
     }
 }
