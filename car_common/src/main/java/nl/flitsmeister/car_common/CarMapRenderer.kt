@@ -18,10 +18,9 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import nl.flitsmeister.car_common.extentions.appManager
 import nl.flitsmeister.car_common.extentions.runOnMainThread
-import kotlin.math.max
+import org.maplibre.android.maps.MapView
 
 class CarMapRenderer(
     private val carContext: CarContext,
