@@ -18,12 +18,12 @@ import androidx.car.app.SurfaceContainer
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
-import com.mapbox.mapboxsdk.maps.MapView
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import nl.flitsmeister.car_common.extentions.appManager
 import nl.flitsmeister.car_common.extentions.runOnMainThread
 import kotlin.math.max
+import org.maplibre.android.maps.MapView
 
 class CarMapRenderer(
     private val carContext: CarContext,
@@ -83,7 +83,7 @@ class CarMapRenderer(
         mapContainer.setSurfaceSize(surfaceContainer.width, surfaceContainer.height)
 
         runOnMainThread {
-        // Start drawing the map on the android auto surface
+            // Start drawing the map on the android auto surface
             uiHandler.removeCallbacksAndMessages(null)
             uiHandler.post { drawOnSurfaceRecursive() }
         }
@@ -153,11 +153,11 @@ class CarMapRenderer(
     }
 
     override fun zoomInFromButton() {
-        onScale(-1f, -1f,-1f)
+        onScale(-1f, -1f, -1f)
     }
 
     override fun zoomOutFromButton() {
-        onScale(-1f, -1f,1f)
+        onScale(-1f, -1f, 1f)
     }
 
     //Map interactivity

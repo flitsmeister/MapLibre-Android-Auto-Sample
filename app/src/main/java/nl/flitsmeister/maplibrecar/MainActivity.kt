@@ -10,21 +10,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
-import com.mapbox.mapboxsdk.Mapbox
-import com.mapbox.mapboxsdk.camera.CameraPosition
-import com.mapbox.mapboxsdk.geometry.LatLng
-import com.mapbox.mapboxsdk.maps.MapView
-import com.mapbox.mapboxsdk.maps.MapboxMap
-import com.mapbox.mapboxsdk.maps.MapboxMapOptions
-import com.mapbox.mapboxsdk.maps.Style
 import nl.flitsmeister.car_common.R
 import nl.flitsmeister.car_common.ResourceUtils
 import nl.flitsmeister.maplibrecar.ui.theme.MapLibreCarTheme
+import org.maplibre.android.MapLibre
+import org.maplibre.android.camera.CameraPosition
+import org.maplibre.android.geometry.LatLng
+import org.maplibre.android.maps.MapLibreMap
+import org.maplibre.android.maps.MapLibreMapOptions
+import org.maplibre.android.maps.MapView
+import org.maplibre.android.maps.Style
 
 class MainActivity : ComponentActivity() {
 
     var mapView: MapView? = null
-    var mapBoxMap: MapboxMap? = null
+    var mapLibreMap: MapLibreMap? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,7 +34,7 @@ class MainActivity : ComponentActivity() {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     AndroidView(modifier = Modifier.padding(innerPadding), factory = { context ->
                         //TextView(context).apply { setText("Hello MapLibreCar") }
-                        val mapboxOptions = MapboxMapOptions.createFromAttributes(context).apply {
+                        val mapLibreOptions = MapLibreMapOptions.createFromAttributes(context).apply {
                             textureMode(true)
                             camera(
                                 CameraPosition.Builder()
@@ -43,11 +43,11 @@ class MainActivity : ComponentActivity() {
                                     .build()
                             )
                         }
-                        Mapbox.getInstance(context)
-                        mapView = MapView(context, mapboxOptions)
+                        MapLibre.getInstance(context)
+                        mapView = MapView(context, mapLibreOptions)
                         mapView?.onCreate(savedInstanceState)
                         mapView?.getMapAsync {
-                            mapBoxMap = it
+                            mapLibreMap = it
                             initMap(it)
                         }
                         mapView!!
@@ -57,7 +57,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun initMap(map: MapboxMap) {
+    private fun initMap(map: MapLibreMap) {
         try {
             map.setStyle(
                 //TODO: Set your own style here!

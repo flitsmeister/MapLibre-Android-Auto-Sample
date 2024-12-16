@@ -9,13 +9,13 @@ import androidx.car.app.CarContext
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
-import com.mapbox.mapboxsdk.Mapbox
-import com.mapbox.mapboxsdk.maps.MapView
-import com.mapbox.mapboxsdk.maps.MapboxMap
-import com.mapbox.mapboxsdk.maps.MapboxMapOptions
-import com.mapbox.mapboxsdk.maps.Style
 import nl.flitsmeister.car_common.extentions.runOnMainThread
 import nl.flitsmeister.car_common.extentions.windowManager
+import org.maplibre.android.MapLibre
+import org.maplibre.android.maps.MapLibreMap
+import org.maplibre.android.maps.MapLibreMapOptions
+import org.maplibre.android.maps.MapView
+import org.maplibre.android.maps.Style
 
 class CarMapContainer(
     private val carContext: CarContext, lifecycle: Lifecycle
@@ -28,7 +28,7 @@ class CarMapContainer(
     var mapViewInstance: MapView? = null
         private set
 
-    var mapboxMapInstance: MapboxMap? = null
+    var mapLibreMapInstance: MapLibreMap? = null
 
     var surfaceWidth: Int? = null
     var surfaceHeight: Int? = null
@@ -48,7 +48,7 @@ class CarMapContainer(
     }
 
     override fun onCreate(owner: LifecycleOwner) {
-        Mapbox.getInstance(carContext)
+        MapLibre.getInstance(carContext)
 
         runOnMainThread {
             mapViewInstance = createMapViewInstance().apply {
@@ -61,7 +61,7 @@ class CarMapContainer(
                 onStart()
                 getMapAsync {
                     mapViewInstance = this
-                    mapboxMapInstance = it
+                    mapLibreMapInstance = it
                     it.setStyle(
                         //TODO: Set your own style here
                         Style.Builder().fromJson(ResourceUtils.readRawResource(carContext, R.raw.local_style))
@@ -81,7 +81,7 @@ class CarMapContainer(
 
     override fun onDestroy(owner: LifecycleOwner) {
         runOnMainThread {
-            mapboxMapInstance = null
+            mapLibreMapInstance = null
 
             mapViewInstance?.run {
                 onStop()
@@ -93,7 +93,7 @@ class CarMapContainer(
     }
 
     private fun createMapViewInstance() =
-        MapView(carContext, MapboxMapOptions.createFromAttributes(carContext).apply {
+        MapView(carContext, MapLibreMapOptions.createFromAttributes(carContext).apply {
             // Set the textureMode to true, so a TextureView is created
             // We can extract this TextureView to draw on the Android Auto surface
             textureMode(true)
