@@ -20,6 +20,7 @@ import androidx.lifecycle.LifecycleOwner
 import com.mapbox.mapboxsdk.maps.MapView
 import nl.flitsmeister.car_common.extentions.appManager
 import nl.flitsmeister.car_common.extentions.runOnMainThread
+import kotlin.math.abs
 
 class CarMapRenderer(
     private val carContext: CarContext,
@@ -142,16 +143,21 @@ class CarMapRenderer(
     }
 
     override fun zoomInFromButton() {
-        onScale(-1f, -1f,-1f)
+        onScale(-1f, -1f, -1.5f)
     }
 
     override fun zoomOutFromButton() {
-        onScale(-1f, -1f,1f)
+        onScale(-1f, -1f, 0.5f)
     }
 
-    //Map interactivity
+    private fun mapFloat(x: Float, inMin: Float, inMax: Float, outMin: Float, outMax: Float): Float {
+        // https://docs.arduino.cc/language-reference/en/functions/math/map/
+        return (x - inMin) * (outMax - outMin) / (inMax - inMin) + outMin
+    }
+
     override fun onScale(focusX: Float, focusY: Float, scaleFactor: Float) {
-        Log.v(LOG_TAG, "onScale focusX($focusX) focusY($focusY) scaleFactor($scaleFactor)")
+        if (scaleFactor == 1f) return
+        Log.v(LOG_TAG, "onScale focusX($focusX) focusY($focusY) scaleFactor($scaleFactor);")
         val mapInstance = mapContainer.mapViewInstance ?: return
         //treat -1 as center
         val zoomX = if (focusX == -1f) {
@@ -164,17 +170,23 @@ class CarMapRenderer(
         } else {
             focusY
         }
-        val a = 100
-        val b = 100
+
+        val scalePixels = mapFloat(scaleFactor, 0.5f, 1.5f, -50f, 50f)
+        if (abs(scalePixels) < 10) {
+            // filter out small zoom gestures.
+            // (also fixes a bug where the map would zoom *out* when the user tries to zoom *in*)
+            return
+        }
         //to try and keep it simple, just move on only x-direction
+        val offset = 100
         generateZoomGesture(
             System.currentTimeMillis(),
             true,
-            startPoint1 = PointF(zoomX - a - (b * scaleFactor), zoomY),
-            startPoint2 = PointF(zoomX + a + (b * scaleFactor), zoomY),
-            endPoint1 = PointF(zoomX - a, zoomY),
-            endPoint2 = PointF(zoomX + a, zoomY),
-            250,
+            startPoint1 = PointF(zoomX - offset, zoomY),
+            startPoint2 = PointF(zoomX + offset, zoomY),
+            endPoint1 = PointF(zoomX - offset - scalePixels, zoomY),
+            endPoint2 = PointF(zoomX + offset + scalePixels, zoomY),
+            64,
             mapInstance
         )
     }
@@ -183,7 +195,7 @@ class CarMapRenderer(
     override fun onScroll(distanceX: Float, distanceY: Float) {
         Log.v(LOG_TAG, "onScroll distanceX($distanceX) distanceY($distanceY)")
         mapContainer.scrollBy(distanceX, distanceY)
-        
+
     }
 
     override fun onClick(x: Float, y: Float) {
@@ -203,7 +215,7 @@ class CarMapRenderer(
         endPoint2: PointF, duration: Int, view: View
     ) {
         //https://stackoverflow.com/a/11599282/1398449
-        val EVENT_MIN_INTERVAL = 10
+        val EVENT_MIN_INTERVAL = 16
         var eventTime = startTime
         var event: MotionEvent?
         var eventX1: Float = startPoint1.x
